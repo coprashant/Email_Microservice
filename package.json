@@ -1,0 +1,31 @@
+{
+  "name": "email-microservice",
+  "version": "1.0.0",
+  "description": "Standalone, reusable Email Microservice using the Gmail API (OAuth2) for sending transactional emails across multiple applications.",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "email",
+    "gmail-api",
+    "microservice",
+    "transactional-email",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "googleapis": "^140.0.1",
+    "helmet": "^7.1.0"
+  }
+}
