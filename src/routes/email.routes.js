@@ -8,12 +8,11 @@ const { sendEmail } = require('../services/gmail.service');
 
 const router = express.Router();
 
-// Basic per-IP rate limiting to protect the Gmail account from abuse.
-// Adjust to taste; Gmail's own sending limits are the ultimate ceiling
-// (roughly 500 emails/day for a standard Gmail account).
+// Rate limiting per client ip to reduce abuse risk
+// Tune limits based on workload and provider quotas
 const sendEmailLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 requests per minute per IP
+  windowMs: 60 * 1000, // one minute window
+  max: 30, // max requests per ip in each window
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -23,8 +22,7 @@ const sendEmailLimiter = rateLimit({
 });
 
 /**
- * POST /api/v1/send-email
- * Protected by x-api-key. Sends a transactional email via Gmail API.
+ * Post endpoint to send transactional email through gmail api
  */
 router.post('/send-email', apiKeyAuth, sendEmailLimiter, async (req, res) => {
   const { valid, errors } = validateSendEmailPayload(req.body);
@@ -49,8 +47,7 @@ router.post('/send-email', apiKeyAuth, sendEmailLimiter, async (req, res) => {
   } catch (err) {
     console.error('[POST /api/v1/send-email] Failed to send email:', err?.message || err);
 
-    // Surface Gmail API error details when available without leaking
-    // internal stack traces to callers.
+    // Return provider error detail when available without internal traces
     const gmailErrorMessage = err?.errors?.[0]?.message || err?.response?.data?.error?.message;
 
     return res.status(502).json({

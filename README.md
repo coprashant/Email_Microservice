@@ -1,194 +1,148 @@
 # Email Microservice
 
-A standalone, reusable Node.js/Express microservice that sends transactional
-emails through the **Gmail API** (OAuth2), protected by a shared `x-api-key`
-secret. Designed to be called by any number of your own applications
-(web, mobile backends, other microservices).
+A production ready Nodejs Express microservice for transactional email delivery using the Gmail API and OAuth2 authentication.
 
-## Features
+## Overview
 
-- `POST /api/v1/send-email` — send plain text and/or HTML emails
-- `GET /health` — lightweight health check for uptime monitors
-- Custom `x-api-key` header authentication (constant-time comparison)
-- `helmet` + `cors` + per-IP rate limiting on the send endpoint
-- Uses the official `googleapis` client — no SMTP credentials needed
-- Docker-ready, deploys cleanly to Render's Free Tier
+This service is intended for backend to backend communication and provides a stable API for sending plain text and HTML emails. It includes request validation, shared secret authentication, secure headers, CORS controls, and rate limiting.
 
----
+## Key Capabilities
+
+- Send transactional email through Gmail API
+- Support plain text body and HTML body
+- Health endpoint for monitoring and uptime checks
+- API key protection with constant time comparison
+- Docker support for container based deployment
+- Clean integration model for multiple client applications
+
+## Technology Stack
+
+- Nodejs
+- Express
+- Google APIs client
+- Helmet
+- CORS
+- Express rate limit
 
 ## Project Structure
 
-```
-email-microservice/
-├── server.js                      # Express app entrypoint
-├── package.json
-├── .env.example
-├── .gitignore
-├── Dockerfile
-├── OAUTH_SETUP.md                 # How to get Gmail OAuth2 credentials
-├── README.md
-├── src/
-│   ├── middleware/
-│   │   └── apiKeyAuth.js          # x-api-key validation middleware
-│   ├── routes/
-│   │   └── email.routes.js        # POST /api/v1/send-email
-│   ├── services/
-│   │   └── gmail.service.js       # Gmail API OAuth2 client + send logic
-│   └── utils/
-│       └── validators.js          # Request payload validation
-└── client-examples/
-    └── EmailServiceClient.java    # Spring Boot RestTemplate example
+```text
+OTP By Email
+server.js
+src
+  middleware
+    apiKeyAuth.js
+  routes
+    email.routes.js
+  services
+    gmail.service.js
+  utils
+    validators.js
+client-examples
+  EmailServiceClient.java
+Dockerfile
+OAUTH_SETUP.md
+README.md
 ```
 
----
+## Prerequisites
 
-## 1. Prerequisites
+- Nodejs version 18 or later
+- Gmail account for sending emails
+- Gmail OAuth2 credentials
 
-- Node.js 18+
-- A Gmail account you're willing to send from
-- Gmail API OAuth2 credentials — see **[OAUTH_SETUP.md](./OAUTH_SETUP.md)**
-  for a full step-by-step walkthrough (Google Cloud Console + OAuth
-  Playground)
+For credential setup steps, refer to [OAUTH_SETUP.md](OAUTH_SETUP.md).
 
----
-
-## 2. Local Setup
+## Local Setup
 
 ```bash
-git clone <your-repo-url>
-cd email-microservice
+git clone <repository-url>
+cd OTP_By_Email
 npm install
 cp .env.example .env
-# edit .env and fill in GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET,
-# GMAIL_REFRESH_TOKEN, GMAIL_USER_EMAIL, SERVICE_API_KEY
 npm start
 ```
 
-The server starts on `http://localhost:3000` by default.
+Default local URL
 
-Verify it's alive:
-
-```bash
-curl http://localhost:3000/health
-# => { "status": "UP" }
+```text
+http://localhost:3000
 ```
 
----
+## Environment Variables
 
-## 3. API Reference
+Use [.env.example](.env.example) as the reference template.
 
-### `GET /health`
+Required variables
 
-No auth required. Returns:
+- GMAIL_CLIENT_ID
+- GMAIL_CLIENT_SECRET
+- GMAIL_REFRESH_TOKEN
+- GMAIL_USER_EMAIL
+- SERVICE_API_KEY
 
-```json
-{ "status": "UP" }
-```
+Optional variable
 
-### `POST /api/v1/send-email`
+- DEFAULT_SENDER_NAME
 
-Requires header: `x-api-key: <SERVICE_API_KEY>`
+## API Endpoints
 
-**Request body:**
+### GET /health
 
-| Field        | Type   | Required | Notes                                          |
-|--------------|--------|----------|-------------------------------------------------|
-| `to`         | string | ✅       | Single address or comma-separated list          |
-| `subject`    | string | ✅       |                                                   |
-| `body`       | string | ⚪        | Plain text body. At least one of body/html required |
-| `html`       | string | ⚪        | HTML body. At least one of body/html required    |
-| `senderName` | string | ⚪        | Display name; falls back to `DEFAULT_SENDER_NAME`|
+Returns service status.
 
-**Example request:**
-
-```bash
-curl -X POST https://your-service.onrender.com/api/v1/send-email \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: your_service_api_key" \
-  -d '{
-    "to": "customer@example.com",
-    "subject": "Welcome to DasKitta!",
-    "body": "Hi there, welcome aboard.",
-    "html": "<h1>Hi there</h1><p>Welcome aboard.</p>",
-    "senderName": "DasKitta Support"
-  }'
-```
-
-**Success response (200):**
+Example response
 
 ```json
 {
-  "success": true,
-  "message": "Email sent successfully.",
-  "data": { "messageId": "18c...", "threadId": "18c..." }
+  "status": "UP"
 }
 ```
 
-**Error responses:**
+### POST /api/v1/send-email
 
-| Status | Meaning                                    |
-|--------|---------------------------------------------|
-| 400    | Validation error (missing/invalid fields)   |
-| 401    | Missing `x-api-key` header                  |
-| 403    | Invalid `x-api-key`                         |
-| 429    | Rate limit exceeded                         |
-| 502    | Gmail API call failed                       |
-| 500    | Server misconfiguration                     |
+Required request header
 
----
+```text
+x-api-key: SERVICE_API_KEY
+```
 
-## 4. Deploying to Render (Free Tier)
+Request body fields
 
-1. Push this repo to GitHub.
-2. In the Render dashboard: **New → Web Service**, connect your repo.
-3. Environment: **Docker** (Render will detect the `Dockerfile`
-   automatically), or choose **Node** and set:
-   - Build command: `npm install`
-   - Start command: `npm start`
-4. Add the environment variables from `.env.example` under **Environment**
-   in the Render dashboard (do NOT commit `.env`).
-5. Deploy. Render will assign a public HTTPS URL like
-   `https://email-microservice.onrender.com`.
-6. Optional: point an external uptime pinger (e.g. UptimeRobot,
-   cron-job.org) at `GET /health` every 5–10 minutes to prevent the
-   Free Tier service from spinning down due to inactivity.
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| to | string | yes | Recipient email or comma separated list |
+| subject | string | yes | Subject line |
+| body | string | no | Plain text content |
+| html | string | no | HTML content |
+| senderName | string | no | Display name for sender |
 
-### Local Docker
+At least one of body or html is required.
+
+## Running with Docker
 
 ```bash
 docker build -t email-microservice .
 docker run -p 3000:3000 --env-file .env email-microservice
 ```
 
----
+## Security and Operations
 
-## 5. Security Notes
+- Keep SERVICE_API_KEY in server side systems only
+- Never commit .env files to source control
+- Rotate service secrets on a defined schedule
+- Monitor health endpoint and API error rates
+- Respect Gmail provider sending limits for your account
 
-- `SERVICE_API_KEY` is a shared secret — only put it in **server-side**
-  environments (other backends, CI jobs). Never embed it in a mobile app
-  or public frontend JS bundle.
-- Rotate `SERVICE_API_KEY` periodically; since it's a single static value,
-  rotating it requires updating all client apps at the same time. For
-  many independent client apps with different trust levels, consider
-  extending `apiKeyAuth.js` to support multiple named keys.
-- The Gmail scope requested in `OAUTH_SETUP.md` (`gmail.send`) is
-  send-only — this service cannot read your inbox even if the refresh
-  token were compromised, limiting blast radius. Still, treat
-  `GMAIL_REFRESH_TOKEN` as a high-value secret.
-- Gmail enforces its own daily sending caps (~500/day for a standard
-  Gmail account, higher for Google Workspace). Plan volume accordingly
-  or consider Workspace/SendGrid-class infra for high-volume sending.
+## Client Integration Example
 
----
+Spring Boot example client is available at [client-examples/EmailServiceClient.java](client-examples/EmailServiceClient.java).
 
-## 6. Calling From Client Apps
+## Developer
 
-See [`client-examples/EmailServiceClient.java`](./client-examples/EmailServiceClient.java)
-for a Spring Boot (`RestTemplate`) example. The same request shape works
-from any language — it's a plain JSON POST with an `x-api-key` header.
-
----
+Prasant Bhattarai
+prasant-bhattarai.com.np
 
 ## License
 
-MIT — use freely across your own applications.
+MIT

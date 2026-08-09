@@ -1,24 +1,55 @@
-# Dependencies
+# Dependency directories
 node_modules/
 
-# Environment variables
+# Environment and secrets
 .env
 .env.local
 .env.*.local
+.env.development
+.env.test
+.env.production
+!.env.example
 
-# Logs
+# Logs and runtime files
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.pid
+*.seed
+*.pid.lock
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
+# Coverage and test outputs
+coverage/
+.nyc_output/
 
 # Build artifacts
 dist/
 build/
+tmp/
+temp/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Editor and IDE metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Certificates and local keys
+*.pem
+*.key
+*.crt
+
+# Docker local override files
+docker-compose.override.yml

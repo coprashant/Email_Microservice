@@ -14,20 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Example Spring Boot client for the Email Microservice.
- *
- * Usage (application.properties / application.yml):
- *   email.service.base-url=https://your-email-microservice.onrender.com
- *   email.service.api-key=your_service_api_key
- *
- * Then inject and call:
- *   emailServiceClient.sendEmail(
- *       "user@example.com",
- *       "Welcome to DasKitta!",
- *       "Hi there, welcome aboard.",
- *       "<h1>Hi there</h1><p>Welcome aboard.</p>",
- *       "DasKitta Support"
- *   );
+ * Example spring boot client for email microservice
+ * Set base url and api key in application configuration
+ * Inject this service and call sendemail for transactional delivery
  */
 @Service
 public class EmailServiceClient {
@@ -45,14 +34,9 @@ public class EmailServiceClient {
     }
 
     /**
-     * Sends a transactional email through the shared Email Microservice.
-     *
-     * @param to          recipient email address
-     * @param subject     email subject line
-     * @param body        plain text body (nullable if html is provided)
-     * @param html        HTML body (nullable if body is provided)
-     * @param senderName  display name shown as the sender (nullable)
-     * @return true if the microservice reported success
+     * Send transactional email through shared email microservice
+     * Params include to subject body html and sendername values
+     * Return true when service reports successful delivery request
      */
     public boolean sendEmail(String to, String subject, String body, String html, String senderName) {
         String url = baseUrl + "/api/v1/send-email";
@@ -74,8 +58,7 @@ public class EmailServiceClient {
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
             return response.getStatusCode() == HttpStatus.OK;
         } catch (HttpStatusCodeException ex) {
-            // Log the response body for debugging (validation errors, auth
-            // failures, or Gmail API errors surfaced by the microservice)
+            // Log response body for validation auth or provider errors
             System.err.println("Email microservice error [" + ex.getStatusCode() + "]: " + ex.getResponseBodyAsString());
             return false;
         }
@@ -83,31 +66,7 @@ public class EmailServiceClient {
 }
 
 /*
- * -----------------------------------------------------------------
- * RestTemplate bean configuration (if you don't already have one):
- * -----------------------------------------------------------------
- *
- * @Configuration
- * public class RestTemplateConfig {
- *     @Bean
- *     public RestTemplate restTemplate() {
- *         return new RestTemplate();
- *     }
- * }
- *
- * -----------------------------------------------------------------
- * Example call from another service/controller:
- * -----------------------------------------------------------------
- *
- * boolean sent = emailServiceClient.sendEmail(
- *     "customer@example.com",
- *     "Your order has shipped!",
- *     "Your order #1234 has shipped.",
- *     "<p>Your order <b>#1234</b> has shipped.</p>",
- *     "DasKitta Support"
- * );
- *
- * if (!sent) {
- *     // handle failure: retry, log, alert, etc.
- * }
+ * Resttemplate bean example for applications that need this client
+ * Configuration annotation and bean annotation can provide instance
+ * Other services can call sendemail and handle false return values
  */

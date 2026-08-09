@@ -10,18 +10,15 @@ const {
   DEFAULT_SENDER_NAME,
 } = process.env;
 
-// Using the "out of band" redirect URI matches the OAuth Playground
-// flow described in OAUTH_SETUP.md. It is only used to construct the
-// OAuth2 client; it is never actually redirected to at runtime since
-// we already have a long-lived refresh token.
+// Redirect uri matches oauth playground flow documented in setup guide
+// It is used to build oauth client and not used for runtime redirects
 const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
 
 let oAuth2Client = null;
 
 /**
- * Lazily builds (and caches) the OAuth2 client used to authorize
- * Gmail API requests. Throws a clear error if required env vars
- * are missing so misconfiguration fails fast and loudly.
+ * Build and cache oauth2 client for gmail api requests
+ * Throw clear error when required environment values are missing
  */
 function getOAuth2Client() {
   if (oAuth2Client) return oAuth2Client;
@@ -45,16 +42,14 @@ function getOAuth2Client() {
 }
 
 /**
- * Encodes a header value (e.g. the Subject or the display name in
- * From/To) so it safely supports UTF-8 characters per RFC 2047.
+ * Encode mail header value to support utf 8 content safely
  */
 function encodeHeaderValue(value) {
   return `=?UTF-8?B?${Buffer.from(value, 'utf-8').toString('base64')}?=`;
 }
 
 /**
- * Builds a raw RFC 2822 MIME message and base64url-encodes it,
- * which is the format the Gmail API's messages.send expects.
+ * Build raw mime message and encode using base64url for gmail api
  */
 function buildRawMessage({ to, subject, body, html, senderName }) {
   const fromDisplayName = senderName || DEFAULT_SENDER_NAME || 'No-Reply';
@@ -71,8 +66,7 @@ function buildRawMessage({ to, subject, body, html, senderName }) {
   let mimeBody;
 
   if (html && body) {
-    // multipart/alternative: email clients will render html if they
-    // can, and fall back to the plain-text version otherwise.
+    // Multipart alternative includes both html and plain text versions
     const boundary = `boundary_${Date.now().toString(16)}`;
     messageParts.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
     mimeBody = [
@@ -107,15 +101,9 @@ function buildRawMessage({ to, subject, body, html, senderName }) {
 }
 
 /**
- * Sends an email through the Gmail API on behalf of GMAIL_USER_EMAIL.
- *
- * @param {Object} params
- * @param {string} params.to - Recipient address (or comma-separated list)
- * @param {string} params.subject
- * @param {string} [params.body] - Plain text body
- * @param {string} [params.html] - HTML body
- * @param {string} [params.senderName] - Display name to use as sender
- * @returns {Promise<{ id: string, threadId: string }>}
+ * Send email through gmail api as configured service account user
+ * Param object includes to subject body html and sendername fields
+ * Returns promise containing id and threadid values
  */
 async function sendEmail({ to, subject, body, html, senderName }) {
   const auth = getOAuth2Client();

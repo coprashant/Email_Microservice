@@ -1,25 +1,17 @@
 'use strict';
 
 /**
- * apiKeyAuth
- * -----------
- * Simple shared-secret authentication middleware.
- * Client applications must send a valid `x-api-key` header
- * matching SERVICE_API_KEY (set in the environment) to invoke
- * protected endpoints.
- *
- * This is intentionally simple (a single static secret) since
- * the microservice is meant to be called only by trusted,
- * server-side applications you control — never expose this
- * key to a browser/mobile client directly.
+ * Api key authentication middleware
+ * Client applications must send a valid x api key header
+ * The header value must match service api key in environment
+ * This design is intended for trusted server to server usage
  */
 function apiKeyAuth(req, res, next) {
   const providedKey = req.header('x-api-key');
   const expectedKey = process.env.SERVICE_API_KEY;
 
   if (!expectedKey) {
-    // Fail closed: if the service itself isn't configured correctly,
-    // refuse all requests rather than silently allowing them through.
+    // Deny all requests when server secret configuration is missing
     console.error('[apiKeyAuth] SERVICE_API_KEY is not set in the environment.');
     return res.status(500).json({
       success: false,
@@ -45,8 +37,7 @@ function apiKeyAuth(req, res, next) {
 }
 
 /**
- * Constant-time string comparison to avoid leaking information
- * via response-time side channels.
+ * Constant time string comparison for better security
  */
 function timingSafeEqual(a, b) {
   const crypto = require('crypto');
@@ -54,8 +45,7 @@ function timingSafeEqual(a, b) {
   const bufB = Buffer.from(String(b));
 
   if (bufA.length !== bufB.length) {
-    // Still run a comparison of equal-length buffers to keep timing
-    // roughly consistent, then return false.
+    // Run equal length comparison path to keep timing similar
     crypto.timingSafeEqual(bufA, bufA);
     return false;
   }

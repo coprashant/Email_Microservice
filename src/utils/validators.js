@@ -3,8 +3,8 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Validates the incoming send-email payload.
- * Returns { valid: boolean, errors: string[] }
+ * Validate incoming send email payload
+ * Return object with valid status and errors array
  */
 function validateSendEmailPayload(payload = {}) {
   const errors = [];
@@ -13,7 +13,7 @@ function validateSendEmailPayload(payload = {}) {
   if (!to || typeof to !== 'string') {
     errors.push('"to" is required and must be a string.');
   } else {
-    // Supports a single address or a comma-separated list
+    // Support single address or comma separated recipient list
     const recipients = to.split(',').map((addr) => addr.trim());
     const invalid = recipients.filter((addr) => !EMAIL_REGEX.test(addr));
     if (invalid.length > 0) {

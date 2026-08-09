@@ -11,16 +11,11 @@ const emailRoutes = require('./src/routes/email.routes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ---------------------------------------------------
-// Trust Proxy Configuration (Fix for Render reverse proxy)
-// ---------------------------------------------------
-// Trust 1 hop (Render's reverse proxy) so express-rate-limit 
-// can accurately extract client IP addresses.
+// Trust proxy configuration for reverse proxy hosting
+// Trust one upstream hop so client ip detection is accurate
 app.set('trust proxy', 1);
 
-// ---------------------------------------------------
-// Core middleware
-// ---------------------------------------------------
+// Core middleware setup
 app.use(helmet());
 app.use(express.json({ limit: '1mb' }));
 
@@ -31,7 +26,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*')
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow non-browser requests (no Origin header, e.g. server-to-server)
+      // Allow non browser requests without origin header
       if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -40,12 +35,9 @@ app.use(
   })
 );
 
-// ---------------------------------------------------
-// Routes
-// ---------------------------------------------------
+// Route registration
 
-// Health check — useful for uptime pings (e.g. UptimeRobot, Render's
-// own health checks) and to prevent Render Free Tier from sleeping.
+// Health endpoint for uptime monitoring and service readiness
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP' });
 });
@@ -60,16 +52,12 @@ app.get('/', (req, res) => {
 
 app.use('/api/v1', emailRoutes);
 
-// ---------------------------------------------------
-// 404 handler
-// ---------------------------------------------------
+// Not found handler
 app.use((req, res) => {
   res.status(404).json({ success: false, error: 'Route not found.' });
 });
 
-// ---------------------------------------------------
-// Global error handler (e.g. CORS rejection, JSON parse errors)
-// ---------------------------------------------------
+// Global error handler for uncaught middleware errors
 app.use((err, req, res, next) => {
   console.error('[Unhandled Error]', err?.message || err);
   res.status(err?.status || 500).json({
