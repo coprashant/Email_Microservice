@@ -12,6 +12,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ---------------------------------------------------
+// Trust Proxy Configuration (Fix for Render reverse proxy)
+// ---------------------------------------------------
+// Trust 1 hop (Render's reverse proxy) so express-rate-limit 
+// can accurately extract client IP addresses.
+app.set('trust proxy', 1);
+
+// ---------------------------------------------------
 // Core middleware
 // ---------------------------------------------------
 app.use(helmet());
