@@ -2,18 +2,17 @@
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * Validate incoming send email payload
- * Return object with valid status and errors array
- */
 function validateSendEmailPayload(payload = {}) {
   const errors = [];
-  const { to, subject, body, html, senderName } = payload;
+  const { account, to, subject, body, html, senderName } = payload;
+
+  if (account !== undefined && typeof account !== 'string') {
+    errors.push('"account" must be a string.');
+  }
 
   if (!to || typeof to !== 'string') {
     errors.push('"to" is required and must be a string.');
   } else {
-    // Support single address or comma separated recipient list
     const recipients = to.split(',').map((addr) => addr.trim());
     const invalid = recipients.filter((addr) => !EMAIL_REGEX.test(addr));
     if (invalid.length > 0) {
@@ -26,7 +25,7 @@ function validateSendEmailPayload(payload = {}) {
   }
 
   if (!body && !html) {
-    errors.push('At least one of "body" (plain text) or "html" must be provided.');
+    errors.push('At least one of "body" or "html" must be provided.');
   }
 
   if (body !== undefined && typeof body !== 'string') {

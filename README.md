@@ -4,11 +4,12 @@ A production ready Nodejs Express microservice for transactional email delivery 
 
 ## Overview
 
-This service is intended for backend to backend communication and provides a stable API for sending plain text and HTML emails. It includes request validation, shared secret authentication, secure headers, CORS controls, and rate limiting.
+This service is intended for backend to backend communication and provides a stable API for sending plain text and HTML emails across single or multiple sending accounts. It includes request validation, shared secret authentication, secure headers, CORS controls, and rate limiting.
 
 ## Key Capabilities
 
 - Send transactional email through Gmail API
+- Multi-account support with dynamic profile selection
 - Support plain text body and HTML body
 - Health endpoint for monitoring and uptime checks
 - API key protection with constant time comparison
@@ -48,7 +49,7 @@ README.md
 ## Prerequisites
 
 - Nodejs version 18 or later
-- Gmail account for sending emails
+- Gmail account(s) for sending emails
 - Gmail OAuth2 credentials
 
 For credential setup steps, refer to [OAUTH_SETUP.md](OAUTH_SETUP.md).
@@ -73,17 +74,43 @@ http://localhost:3000
 
 Use [.env.example](.env.example) as the reference template.
 
-Required variables
+### Multi-Account Configuration (Recommended)
+
+To support multiple Gmail accounts or sender profiles in a single microservice instance, define `GMAIL_ACCOUNTS` as a JSON string:
+
+```env
+GMAIL_ACCOUNTS='{
+  "otp_service": {
+    "clientId": "CLIENT_ID_1",
+    "clientSecret": "SECRET_1",
+    "refreshToken": "REFRESH_TOKEN_1",
+    "userEmail": "auth@yourdomain.com",
+    "senderName": "Auth Team"
+  },
+  "billing_service": {
+    "clientId": "CLIENT_ID_2",
+    "clientSecret": "SECRET_2",
+    "refreshToken": "REFRESH_TOKEN_2",
+    "userEmail": "billing@yourdomain.com",
+    "senderName": "Billing Dept"
+  }
+}'
+```
+
+### Legacy Single-Account Configuration (Fallback)
+
+Required variables for single account setup:
 
 - GMAIL_CLIENT_ID
 - GMAIL_CLIENT_SECRET
 - GMAIL_REFRESH_TOKEN
 - GMAIL_USER_EMAIL
-- SERVICE_API_KEY
 
-Optional variable
+### Other Variables
 
-- DEFAULT_SENDER_NAME
+- SERVICE_API_KEY (Required)
+- DEFAULT_SENDER_NAME (Optional default sender display name)
+- ALLOWED_ORIGINS (Optional CORS origins configuration)
 
 ## API Endpoints
 
@@ -111,6 +138,7 @@ Request body fields
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
+| account | string | no | Target account key defined in `GMAIL_ACCOUNTS` (defaults to "default" or first account) |
 | to | string | yes | Recipient email or comma separated list |
 | subject | string | yes | Subject line |
 | body | string | no | Plain text content |
@@ -118,6 +146,17 @@ Request body fields
 | senderName | string | no | Display name for sender |
 
 At least one of body or html is required.
+
+Example Request Body (Multi-Account)
+
+```json
+{
+  "account": "billing_service",
+  "to": "customer@example.com",
+  "subject": "Invoice Receipt",
+  "html": "<h1>Thank you for your payment!</h1>"
+}
+```
 
 ## Running with Docker
 

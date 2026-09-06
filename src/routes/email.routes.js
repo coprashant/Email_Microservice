@@ -8,11 +8,9 @@ const { sendEmail } = require('../services/gmail.service');
 
 const router = express.Router();
 
-// Rate limiting per client ip to reduce abuse risk
-// Tune limits based on workload and provider quotas
 const sendEmailLimiter = rateLimit({
-  windowMs: 60 * 1000, // one minute window
-  max: 30, // max requests per ip in each window
+  windowMs: 60 * 1000,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -21,9 +19,6 @@ const sendEmailLimiter = rateLimit({
   },
 });
 
-/**
- * Post endpoint to send transactional email through gmail api
- */
 router.post('/send-email', apiKeyAuth, sendEmailLimiter, async (req, res) => {
   const { valid, errors } = validateSendEmailPayload(req.body);
 
@@ -31,10 +26,10 @@ router.post('/send-email', apiKeyAuth, sendEmailLimiter, async (req, res) => {
     return res.status(400).json({ success: false, errors });
   }
 
-  const { to, subject, body, html, senderName } = req.body;
+  const { account, to, subject, body, html, senderName } = req.body;
 
   try {
-    const result = await sendEmail({ to, subject, body, html, senderName });
+    const result = await sendEmail({ account, to, subject, body, html, senderName });
 
     return res.status(200).json({
       success: true,
@@ -47,7 +42,6 @@ router.post('/send-email', apiKeyAuth, sendEmailLimiter, async (req, res) => {
   } catch (err) {
     console.error('[POST /api/v1/send-email] Failed to send email:', err?.message || err);
 
-    // Return provider error detail when available without internal traces
     const gmailErrorMessage = err?.errors?.[0]?.message || err?.response?.data?.error?.message;
 
     return res.status(502).json({
